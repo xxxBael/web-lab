@@ -12,7 +12,7 @@
 .d1_1_1_5{width:120px;height: 40px;float: right;line-height: 40px;}
 /* 五个div */
 
-.d1_1_2{width: 100%;height: 123px; background-color: bisque; background-image: url(../zhixing_img/logo.jpg);background-repeat: no-repeat;background-size: 100% 100%; } /*页面-页眉2 */
+.d1_1_2{width: 100%;height: 123px; background-color: bisque; background-image: url(./zhixing_img/logo.jpg);background-repeat: no-repeat;background-size: 100% 100%; } /*页面-页眉2 */
 .d1_1_2_1{width: 240px;height: 100%;float: right;}
 .d1_1_3{width: 100%;margin: 0 auto; height: 63px;background-color:#161616;}
 
