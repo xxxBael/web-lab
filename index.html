@@ -1,269 +1,515 @@
-<!doctype html>
-<html>
+<!DOCTYPE html>
+<html lang="en">
 <head>
-<meta charset="utf-8">
-<title>HTML5 Canvas爱心表白动画特效DEMO演示</title>
-
-<style>
-html, body {
-  height: 100%;
-  padding: 0;
-  margin: 0;
-  background: #000;
-}
-canvas {
-  width: 100%;
-  height: 100%;
-}
-</style>
-
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>知性女性</title>
+    <link rel="stylesheet" href="weblast.css" type="text/css">
 </head>
-<body>
-
-<div style="text-align:center;clear:both;">
-<script src="/gg_bd_ad_720x90.js" type="text/javascript"></script>
-<script src="/follow.js" type="text/javascript"></script>
-</div>
-
-<canvas id="pinkboard"></canvas>
-
-<script>
-/*
- * Settings
- */
-var settings = {
-  particles: {
-    length:   500, // maximum amount of particles
-    duration:   2, // particle duration in sec
-    velocity: 100, // particle velocity in pixels/sec
-    effect: -0.75, // play with this for a nice effect
-    size:      30, // particle size in pixels
-  },
-};
-
-/*
- * RequestAnimationFrame polyfill by Erik M?ller
- */
-(function(){var b=0;var c=["ms","moz","webkit","o"];for(var a=0;a<c.length&&!window.requestAnimationFrame;++a){window.requestAnimationFrame=window[c[a]+"RequestAnimationFrame"];window.cancelAnimationFrame=window[c[a]+"CancelAnimationFrame"]||window[c[a]+"CancelRequestAnimationFrame"]}if(!window.requestAnimationFrame){window.requestAnimationFrame=function(h,e){var d=new Date().getTime();var f=Math.max(0,16-(d-b));var g=window.setTimeout(function(){h(d+f)},f);b=d+f;return g}}if(!window.cancelAnimationFrame){window.cancelAnimationFrame=function(d){clearTimeout(d)}}}());
-
-/*
- * Point class
- */
-var Point = (function() {
-  function Point(x, y) {
-    this.x = (typeof x !== 'undefined') ? x : 0;
-    this.y = (typeof y !== 'undefined') ? y : 0;
-  }
-  Point.prototype.clone = function() {
-    return new Point(this.x, this.y);
-  };
-  Point.prototype.length = function(length) {
-    if (typeof length == 'undefined')
-      return Math.sqrt(this.x * this.x + this.y * this.y);
-    this.normalize();
-    this.x *= length;
-    this.y *= length;
-    return this;
-  };
-  Point.prototype.normalize = function() {
-    var length = this.length();
-    this.x /= length;
-    this.y /= length;
-    return this;
-  };
-  return Point;
-})();
-
-/*
- * Particle class
- */
-var Particle = (function() {
-  function Particle() {
-    this.position = new Point();
-    this.velocity = new Point();
-    this.acceleration = new Point();
-    this.age = 0;
-  }
-  Particle.prototype.initialize = function(x, y, dx, dy) {
-    this.position.x = x;
-    this.position.y = y;
-    this.velocity.x = dx;
-    this.velocity.y = dy;
-    this.acceleration.x = dx * settings.particles.effect;
-    this.acceleration.y = dy * settings.particles.effect;
-    this.age = 0;
-  };
-  Particle.prototype.update = function(deltaTime) {
-    this.position.x += this.velocity.x * deltaTime;
-    this.position.y += this.velocity.y * deltaTime;
-    this.velocity.x += this.acceleration.x * deltaTime;
-    this.velocity.y += this.acceleration.y * deltaTime;
-    this.age += deltaTime;
-  };
-  Particle.prototype.draw = function(context, image) {
-    function ease(t) {
-      return (--t) * t * t + 1;
-    }
-    var size = image.width * ease(this.age / settings.particles.duration);
-    context.globalAlpha = 1 - this.age / settings.particles.duration;
-    context.drawImage(image, this.position.x - size / 2, this.position.y - size / 2, size, size);
-  };
-  return Particle;
-})();
-
-/*
- * ParticlePool class
- */
-var ParticlePool = (function() {
-  var particles,
-      firstActive = 0,
-      firstFree   = 0,
-      duration    = settings.particles.duration;
-  
-  function ParticlePool(length) {
-    // create and populate particle pool
-    particles = new Array(length);
-    for (var i = 0; i < particles.length; i++)
-      particles[i] = new Particle();
-  }
-  ParticlePool.prototype.add = function(x, y, dx, dy) {
-    particles[firstFree].initialize(x, y, dx, dy);
+<body>  
+    <div class="d1">
+    </div>
+    <div class="d2">
+    </div>
+    <div class="d23"></div>
+    <div class="d3">
+    </div>
+    <div class="d0">
     
-    // handle circular queue
-    firstFree++;
-    if (firstFree   == particles.length) firstFree   = 0;
-    if (firstActive == firstFree       ) firstActive++;
-    if (firstActive == particles.length) firstActive = 0;
-  };
-  ParticlePool.prototype.update = function(deltaTime) {
-    var i;
-    
-    // update active particles
-    if (firstActive < firstFree) {
-      for (i = firstActive; i < firstFree; i++)
-        particles[i].update(deltaTime);
-    }
-    if (firstFree < firstActive) {
-      for (i = firstActive; i < particles.length; i++)
-        particles[i].update(deltaTime);
-      for (i = 0; i < firstFree; i++)
-        particles[i].update(deltaTime);
-    }
-    
-    // remove inactive particles
-    while (particles[firstActive].age >= duration && firstActive != firstFree) {
-      firstActive++;
-      if (firstActive == particles.length) firstActive = 0;
-    }
-    
-    
-  };
-  ParticlePool.prototype.draw = function(context, image) {
-    // draw active particles
-    if (firstActive < firstFree) {
-      for (i = firstActive; i < firstFree; i++)
-        particles[i].draw(context, image);
-    }
-    if (firstFree < firstActive) {
-      for (i = firstActive; i < particles.length; i++)
-        particles[i].draw(context, image);
-      for (i = 0; i < firstFree; i++)
-        particles[i].draw(context, image);
-    }
-  };
-  return ParticlePool;
-})();
+        <div class="d1_1">
+            <div class="d1_1_1">
+                <div class="d1_1_1_1"><p class="p11">&nbsp;2011瑞丽造型大赏</p></div>
+                <div class="d1_1_1_2"><p class="p11">手机看瑞丽</p></div>
+                <div class="d1_1_1_3"><p class="p11">瑞丽电子杂志</p></div>
+                <div class="d1_1_1_4"><p class="p11">网站地图</p></div>
+                <div class="d1_1_1_5"><p class="p11">设为首页</p></div>
+            </div>
+<!-- 页眉1 -->
+            <div class="d1_1_2">           
+            <div class="d1_1_2_1">
+                <p class="p1">艾诗缇超值体验优惠中</p>
+                <p class="p1">雅诗兰黛全新密集焕白</p>
+                <p class="p1">渴水秀发润泽凝驻</p>
+                <p class="p1">玩游戏赢欧珀莱正品</p>
+            </div>
+            </div>
+<!-- 页眉2 -->
+            <div class="d1_1_3">
+                <ul class="ul_1">
+                    <li class="l1"><p class="pli">服饰</p></li>
+                    <li class="l1"><p class="pli">美容</p></li>
+                    <li class="l1"><p class="pli">家居</p></li>
+                    <li><p class="pli">奢华</p></li>
+                    <li><p class="pli">生活</p></li>
+                    <li><p class="pli">新娘</p></li>
+                    <li><p class="pli">星座</p></li>
+                    <li><p class="pli">模特</p></li>
+                    <li><p class="pli">男人</p></li>
+                    <li><p class="pli">情感</p></li>
+                    <li><p class="pli">图片</p></li>
+                    <li><p class="pli">视频</p></li>
+                    <li><p class="pli">专题</p></li>
+                    <li><p class="pli">论坛</p></li>
+                    <li><p class="pli">博客</p></li>
+                    <li><p class="pli">测试</p></li>
+                    <li><p class="pli">化妆品库</p></li>
+                    <li><p class="pli">微博</p></li>
+                </ul>
+            </div>
+        </div> 
+<!-- 页眉3 -->
+        <div class="d2_0">        
+        <div class="d2_1">       
+        <div class="d2_1_1">
+            <div class="d2_1_1_1">
+            <a id="a1" class="num1">1</a>
+			<a id="a2" class="num2">2</a>
+			<a id="a3" class="num3">3</a>
+			<a id="a4" class="num4">4</a>
+			<a id="a5" class="num5">5</a>
+            <a id="a6" class="num6">6</a>
+            <a id="a7" class="num7">7</a>
+            <a id="a8" class="num8">8</a>
+			<div id="all-picture">
+				<img src="../zhixing_img/picture1.jpg" >
+				<img src="../zhixing_img/picture2.jpg" >
+				<img src="../zhixing_img/picture3.jpg" >
+				<img src="../zhixing_img/picture4.jpg" >
+				<img src="../zhixing_img/picture5.jpg" >
+                <img src="../zhixing_img/picture6.jpg" >
+				<img src="../zhixing_img/picture7.jpg" >
+				<img src="../zhixing_img/picture8.jpg" >                
+            </div>
+            <div id="picture-p">
+             <ul class="ul_2">
+                <li class="l2">粉嫩季节！跟模特学穿果冻色</li>
+                <li class="l2">欧米茄Ladymatic女性腕表系列</li>
+                <li class="l2">调出花香气息 舒展身体放松精神</li>
+                <li class="l2">H&M  完美纯白初夏</li>
+                <li class="l2">局部花案点睛 让卫浴空间更有趣味</li>
+                <li class="l2">雅诗兰黛全新密集焕白系列</li>
+                <li class="l2">威廉王子婚礼大猜想</li>
+                <li class="l2">秀出来的资生美白女王就是你</li>
+             </ul>
+            </div>
+            </div>  
+            <div class="d2_1_1_2">
+                <div class="d2_1_1_2_0">
+                    <div class="d2_1_1_2_0_1">
+                       <div class="top">&nbsp;排行榜TOP</div>
+                       <div class="nav">
+                        <span class="s1" title="服饰">&nbsp;&nbsp;服饰</span>
+                            <span title="美容">&nbsp;&nbsp;美容</span>
+                            <span title="家居">&nbsp;&nbsp;家居</span>
+                            <span title="星座">&nbsp;&nbsp;星座</span>
+                            <span title="测试">&nbsp;&nbsp;测试</span>                     
+                       </div>                                     
+                    </div>
+                    <div class="d2_1_1_2_0_2">                    
+                        <div class="active">
+                            <p class="p4">&nbsp;&nbsp;01&nbsp;&nbsp;&nbsp;&nbsp;《肉蒲团》女星诱惑裙装集锦</p><br>
+                            <p class="p4">&nbsp;&nbsp;02&nbsp;&nbsp;&nbsp;&nbsp;范玮琪撞衫第一夫人彩条裙</p><br>
+                            <p class="p4">&nbsp;&nbsp;03&nbsp;&nbsp;&nbsp;&nbsp;何洁牵手释小龙甜美搭惹人爱</p><br>
+                            <p class="p4">&nbsp;&nbsp;04&nbsp;&nbsp;&nbsp;&nbsp;30款名媛轻熟搭打造气场衣橱</p><br>
+                            <p class="p4">&nbsp;&nbsp;05&nbsp;&nbsp;&nbsp;&nbsp;“心计”美人林心如穿衣经</p><br>
+                            <p class="p4">&nbsp;&nbsp;06&nbsp;&nbsp;&nbsp;&nbsp;牛仔加点儿“红”今季最流行</p><br>
+                            <p class="p4">&nbsp;&nbsp;07&nbsp;&nbsp;&nbsp;&nbsp;蕾丝镂空装！若隐若现</p><br>
+                            <p class="p4">&nbsp;&nbsp;08&nbsp;&nbsp;&nbsp;&nbsp;17个简约chic装搭出清新格调</p><br>
+                            <p class="p4">&nbsp;&nbsp;09&nbsp;&nbsp;&nbsp;&nbsp;Dior新设计总监人选尘埃落定</p><br>
+                            <p class="p4">&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;亮色衣实搭攻略调动春夏热情</p>
+                        </div> 
+                        <div>
+                            <p class="p4">&nbsp;&nbsp;01&nbsp;&nbsp;&nbsp;&nbsp;瑞丽网美容频道改版有奖调查</p><br>
+                            <p class="p4">&nbsp;&nbsp;02&nbsp;&nbsp;&nbsp;&nbsp;美白PK&nbsp;小S热辣呛腔林志玲</p><br>
+                            <p class="p4">&nbsp;&nbsp;03&nbsp;&nbsp;&nbsp;&nbsp;文青至爱&nbsp;小清新护肤品</p><br>
+                            <p class="p4">&nbsp;&nbsp;04&nbsp;&nbsp;&nbsp;&nbsp;香气性感带热榜&nbsp;让诱惑升级</p><br>
+                            <p class="p4">&nbsp;&nbsp;05&nbsp;&nbsp;&nbsp;&nbsp;探秘性格&nbsp;找到专属香气标签</p><br>
+                            <p class="p4">&nbsp;&nbsp;06&nbsp;&nbsp;&nbsp;&nbsp;明星最失败妆容&nbsp;惨不忍睹</p><br>
+                            <p class="p4">&nbsp;&nbsp;07&nbsp;&nbsp;&nbsp;&nbsp;学8款最夯剧集女主角发型</p><br>
+                            <p class="p4">&nbsp;&nbsp;08&nbsp;&nbsp;&nbsp;&nbsp;新生代美女杨幂&nbsp;时尚装解构</p><br>
+                            <p class="p4">&nbsp;&nbsp;09&nbsp;&nbsp;&nbsp;&nbsp;《回家的诱惑》秋瓷炫发型</p><br>
+                            <p class="p4">&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;重口味美甲&nbsp;比拼视觉冲击力</p>
+                        </div>
+                        <div>
+                             <p class="p4">&nbsp;&nbsp;01&nbsp;&nbsp;&nbsp;&nbsp;Christofle流线型家居艺术</p><br>
+                             <p class="p4">&nbsp;&nbsp;02&nbsp;&nbsp;&nbsp;&nbsp;自然元素壁纸会呼吸</p><br>
+                             <p class="p4">&nbsp;&nbsp;03&nbsp;&nbsp;&nbsp;&nbsp;初春家居糖果色来袭</p><br>
+                             <p class="p4">&nbsp;&nbsp;04&nbsp;&nbsp;&nbsp;&nbsp;条纹控!Diy初春给力装饰</p><br>
+                             <p class="p4">&nbsp;&nbsp;05&nbsp;&nbsp;&nbsp;&nbsp;给力柔美风&nbsp;7款田园美餐厅</p><br>
+                             <p class="p4">&nbsp;&nbsp;06&nbsp;&nbsp;&nbsp;&nbsp;撞色小空间越“色”越出位</p><br>
+                             <p class="p4">&nbsp;&nbsp;07&nbsp;&nbsp;&nbsp;&nbsp;窗帘保养要看材料和款式</p><br>
+                             <p class="p4">&nbsp;&nbsp;08&nbsp;&nbsp;&nbsp;&nbsp;“字母”大热百变饰家都精彩</p><br>
+                             <p class="p4">&nbsp;&nbsp;09&nbsp;&nbsp;&nbsp;&nbsp;早春选一款最“养眼”窗帘</p><br>
+                             <p class="p4">&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;威廉王子大婚甜蜜家饰走红</p>
+                        </div>
+                        <div>
+                             <p class="p4">&nbsp;&nbsp;01&nbsp;&nbsp;&nbsp;&nbsp;十二星座变脸排行榜</p><br>
+                             <p class="p4">&nbsp;&nbsp;02&nbsp;&nbsp;&nbsp;&nbsp;12星男对女人的非分之想</p><br>
+                             <p class="p4">&nbsp;&nbsp;03&nbsp;&nbsp;&nbsp;&nbsp;12星座隐婚的目的</p><br>
+                             <p class="p4">&nbsp;&nbsp;04&nbsp;&nbsp;&nbsp;&nbsp;会回去找前女友暧昧的星男</p><br>
+                             <p class="p4">&nbsp;&nbsp;05&nbsp;&nbsp;&nbsp;&nbsp;侯佩琴婚期比大s的好吗?</p><br>
+                             <p class="p4">&nbsp;&nbsp;06&nbsp;&nbsp;&nbsp;&nbsp;12星座五月运势早知道</p><br>
+                             <p class="p4">&nbsp;&nbsp;07&nbsp;&nbsp;&nbsp;&nbsp;猫石对话周运(4.18-4.24)</p><br>
+                             <p class="p4">&nbsp;&nbsp;08&nbsp;&nbsp;&nbsp;&nbsp;琼女郎与黄志忠为何离婚？</p><br>
+                             <p class="p4">&nbsp;&nbsp;09&nbsp;&nbsp;&nbsp;&nbsp;谁是最值得嫁的星座好老公？</p><br>
+                             <p class="p4">&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;从梦境看内心最孤寂的八种人</p>
+                        </div>
+                        <div>
+                            <p class="p4">&nbsp;&nbsp;01&nbsp;&nbsp;&nbsp;&nbsp;未来一个月你的运势多少分</p><br>
+                            <p class="p4">&nbsp;&nbsp;02&nbsp;&nbsp;&nbsp;&nbsp;素颜时你的勾引力有多强？</p><br>
+                            <p class="p4">&nbsp;&nbsp;03&nbsp;&nbsp;&nbsp;&nbsp;单身的你最缺少什么？</p><br>
+                            <p class="p4">&nbsp;&nbsp;04&nbsp;&nbsp;&nbsp;&nbsp;婚后的你是那种主妇命</p><br>
+                            <p class="p4">&nbsp;&nbsp;05&nbsp;&nbsp;&nbsp;&nbsp;婚后你们的身价会跌多少？</p><br>
+                            <p class="p4">&nbsp;&nbsp;06&nbsp;&nbsp;&nbsp;&nbsp;你是他眼中的西施吗？</p><br>
+                            <p class="p4">&nbsp;&nbsp;07&nbsp;&nbsp;&nbsp;&nbsp;你有被暗恋的潜质吗？</p><br>
+                            <p class="p4">&nbsp;&nbsp;08&nbsp;&nbsp;&nbsp;&nbsp;这辈子你的老公会偷吃几次？</p><br>
+                            <p class="p4">&nbsp;&nbsp;09&nbsp;&nbsp;&nbsp;&nbsp;你会放错电钓鱼吗？</p><br>
+                            <p class="p4">&nbsp;&nbsp;10&nbsp;&nbsp;&nbsp;&nbsp;你“抢钱”能力有多强？</p>
+                        </div>
+                    </div>
+                </div>
+        </div>
+       </div> 
+            <div class="d2_1_2">
+            <div class="d2top_f">快讯：&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;    8个步凑调整新陈代谢</div>
+            <div class="d2top_center" id="datetime"></div>
+            <div class="d2top_center2"><h2 style="color: #b80412;margin: 0 auto;" align="center">美白双PK 性感小S热辣呛腔林志玲</h2><h4 style="margin-top: 5px;margin-bottom: 30px;margin-left: 20px;margin-right: 20px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;一个是麻辣性感的"美白大帝"小S,一个是完整温柔的“美白女神”林志玲。当小S遭遇林志玲,会碰撞出怎样的火花......</h4>
+            <h2 style="color: #b80412;margin: 0 auto;" align="center">长谷川润舰装登台 点亮神户时尚盛宴</h2><h4 style="margin-top: 5px;margin-bottom: 10px;margin-left: 20px;margin-right: 20px;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;2011神户时尚潮流盛宴如期而至,瑞丽专属模特与日本当红模特们靓装登台。长谷川润更是此次盛宴上最亮眼的T台风景......</h4>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">顶级花装!  日本美女超强示范</p> &nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">美容新节奏 8招必学按摩法</p> </a>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">谢霆锋刘嘉玲金像奖称帝称后</p>&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">游巴厘岛 候佩岑浪漫完婚地</p> </a>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">魔力条纹 让春局更有活力</p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">范范黑人预支蜜月浪漫美国行</p> </a>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">杨幂蓝燕抖肩裙穿出女神感</p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">"愤怒的小鸟"主题婚礼</p>&nbsp;&nbsp;&nbsp;&nbsp;</a>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">谁是最值得嫁的是星座好老公?</p>&nbsp;&nbsp;<p class="p9">精油唤醒身体肌肤活力</p>&nbsp;&nbsp;&nbsp;&nbsp;</a>
+            <a href="#" class="d2top_center3">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">阳光下体验美白 享受美丽</p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">小s林志玲美白防晒大PK</p> </a>
+            <div class="d2top_center4">&nbsp;&nbsp;&nbsp;<p class="p9">寻找美白守护神赢正品SKII点亮环彩之白</p>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">渴水秀发润泽凝驻</p><br>&nbsp;&nbsp;&nbsp;<p class="p9">净透肤质 健康亮白</p>&nbsp;&nbsp;<p class="p9">悠莱彩妆,新耀登场</p>   &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">铂金婚戒挑选红宝书</p> </div>
+            <hr width="70%" size="1px" color="red" align="right">
+            <div class="d2top_center5"><br><p class="p9">如何找到适合自己的"精准"美白法呢?《追踪2011美白趋势"黄"皮肤精准"告白"》功能即将上线为你支招!</p></div>
+                <div class="d2top_center61"><br><img src="../zhixing_img/20110414145930180zhuanti.jpg" width="227px" height="266px" /></div>
+                <div class="d2top_center62"><br><a href="#" style="font-size: 2ch;color:#d1840b;font-weight: 800;text-decoration: none;margin-bottom: 15px;">名媛衣橱揭秘!偷学气场搭衣</a><a href="#" style="font-size: 1.5ch;text-decoration: none;color: black;margin-top: 17px;font-weight: 400;"><br><br>
+                    <p class="p9">本期特别为你聚焦风格独具的神秘名媛系数名门美女的穿衣道</p>······</a><br><br><a href="#" style="font-size: 1.7ch;text-decoration: none;color: black;margin-top: 17px;font-weight: 400;">&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">精油唤醒身体肌肤活力</p></a><br><br><a href="#" style="font-size: 1.7ch;text-decoration: none;color: black;margin-top: 17px;font-weight: 400;">&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">破解收纳难题还你洁净空间</p> </a><br><br>
+                    <a href="#" style="font-size: 1.7ch;text-decoration: none;color: black;margin-top: 17px;font-weight: 400;">&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">威廉王子婚礼大猜想</p></a><br><br><a href="#" style="font-size: 1.7ch;text-decoration: none;color: black;margin-top: 17px;font-weight: 400;">&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">星座爱情诊所与小三斗争到底</p></a></div>
+            </div>                
+        </div>
+        <div class="d2_1_3">
+            <div class="d2_1_3_1">
+                <br>
+                <input type="text"  placeholder="瑞丽电子杂志">&nbsp;&nbsp;&nbsp;&nbsp;
+                <p class="p22">提交</p>
+                <p class="p21">&nbsp;&nbsp;最新活动</p>
+                <img src="../zhixing_img/20110401023452210x60.jpg" alt="" width="262px" height="75px">
+                <p class="p5">秀出来的资生美白女王就是你</p><br>
+                <p class="p5">许下美白心愿赢思魅欧珀莱正品</p>
+                <p class="p5">欧米茄Ladymatic女性腕表系列</p>
+                <p class="p5">爱慕最新礼服式衣周周送啦!</p>
+            </div>
+            <div class="d2_1_3_2">
+               <div class="nav1">
+                <span class="sp1">&nbsp;新刊早报</span>
+                <span>&nbsp;市场调查</span>
+                <span>&nbsp;阳光基金</span>
+               </div>
+               <div class="d2_1_3_2_1">
+                <div class="active1"><img src="../zhixing_img/20110418111947sd.jpg" alt="" width="178px" height="226px"><p class="p6">《瑞丽时尚先锋》</p><p class="p6">瑞丽时尚先锋》5月号 4月16日全国上市······</p></div>
+                <div><img src="../zhixing_img/20110330202924ss.jpg" alt="" width="178px" height="226px"><p class="p6">4月号《瑞丽时尚先锋》有奖调查</p><p class="p6">只有认真填写问卷，就有机会获得精美礼品</p></div>
+                <div><img src="../zhixing_img/201101061405491.jpg" alt="" width="178px" height="226px"><p class="p6">阳光瑞丽基金</p><p class="p6">阳光瑞丽基金“对话希望”公益图片展成功举行······</p></div>
+               </div>
 
-/*
- * Putting it all together
- */
-(function(canvas) {
-  var context = canvas.getContext('2d'),
-      particles = new ParticlePool(settings.particles.length),
-      particleRate = settings.particles.length / settings.particles.duration, // particles/sec
-      time;
-  
-  // get point on heart with -PI <= t <= PI
-  function pointOnHeart(t) {
-    return new Point(
-      160 * Math.pow(Math.sin(t), 3),
-      130 * Math.cos(t) - 50 * Math.cos(2 * t) - 20 * Math.cos(3 * t) - 10 * Math.cos(4 * t) + 25
-    );
-  }
-  
-  // creating the particle image using a dummy canvas
-  var image = (function() {
-    var canvas  = document.createElement('canvas'),
-        context = canvas.getContext('2d');
-    canvas.width  = settings.particles.size;
-    canvas.height = settings.particles.size;
-    // helper function to create the path
-    function to(t) {
-      var point = pointOnHeart(t);
-      point.x = settings.particles.size / 2 + point.x * settings.particles.size / 350;
-      point.y = settings.particles.size / 2 - point.y * settings.particles.size / 350;
-      return point;
-    }
-    // create the path
-    context.beginPath();
-    var t = -Math.PI;
-    var point = to(t);
-    context.moveTo(point.x, point.y);
-    while (t < Math.PI) {
-      t += 0.01; // baby steps!
-      point = to(t);
-      context.lineTo(point.x, point.y);
-    }
-    context.closePath();
-    // create the fill
-    context.fillStyle = '#ea80b0';
-    context.fill();
-    // create the image
-    var image = new Image();
-    image.src = canvas.toDataURL();
-    return image;
-  })();
-  
-  // render that thing!
-  function render() {
-    // next animation frame
-    requestAnimationFrame(render);
-    
-    // update time
-    var newTime   = new Date().getTime() / 1000,
-        deltaTime = newTime - (time || newTime);
-    time = newTime;
-    
-    // clear canvas
-    context.clearRect(0, 0, canvas.width, canvas.height);
-    
-    // create new particles
-    var amount = particleRate * deltaTime;
-    for (var i = 0; i < amount; i++) {
-      var pos = pointOnHeart(Math.PI - 2 * Math.PI * Math.random());
-      var dir = pos.clone().length(settings.particles.velocity);
-      particles.add(canvas.width / 2 + pos.x, canvas.height / 2 - pos.y, dir.x, -dir.y);
-    }
-    
-    // update and draw particles
-    particles.update(deltaTime);
-    particles.draw(context, image);
-  }
-  
-  // handle (re-)sizing of the canvas
-  function onResize() {
-    canvas.width  = canvas.clientWidth;
-    canvas.height = canvas.clientHeight;
-  }
-  window.onresize = onResize;
-  
-  // delay rendering bootstrap
-  setTimeout(function() {
-    onResize();
-    render();
-  }, 10);
-})(document.getElementById('pinkboard'));
-</script>
+            </div>
+            </div>
+            </div>
 
+        <div class="d2_2">
+        <div class="d2_2_1">
+            &nbsp;&nbsp;&nbsp;<a href="#" class="p_button1_2">Model&nbsp;&nbsp;模特</a>
+            &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp; &nbsp;&nbsp;
+            <a href="#" class="p_button2">潮流播报</a>
+            &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2_2">瑞丽培训</a>
+            &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2_2">模特经纪</a>
+            &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2_2">视频专区</a>
+            &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2_2">赛事直击</a>
+            &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2_2">我要做模特</a>
+        </div>
+        <div class="d2_2_2">
+
+            <div class="d2_2_2_1">
+                <div class="d2_2_2_1_1">
+                    <div class="d2_2_2_1_1_1">
+                        <div class="d21left">
+                            <div class="nav2">
+                                <span class="sp2">1</span>
+                                <span>2</span>
+                               </div>
+                            <div class="d211left">                              
+                                <div class="active2"><img src="../zhixing_img/201104121014090_0412.jpg" alt="" width="361px" height="375px"><p class="p7">主题曲MV外景拍摄花絮</p></div>
+                                <div><img src="../zhixing_img/20110401011919indexmuote0401290x291.jpg" alt="" width="361px" height="375px"><p class="p7">让肌肤环采透亮小秘诀</p></div>
+                            </div>
+                            
+                        </div>
+                    </div>
+                    <div class="d2_2_2_1_1_2">
+                        <div class="d2button"><br>模特课堂<br><br><img src="../zhixing_img/20110407184148图1.jpg" width="127px" height="190px" /></div>
+                        <div class="d2button1"><br><br><br><a href="#" class="d2_a">5月18日平面模特班报名</a><br><br><a href="#" class="d2_a">你是否也对外观缺乏自信？是否也想打造瑞模般的妆容......</a><br><br><br><a href="#" class="d2_a">瑞丽培训舞动人生</a><br><a href="#" class="d2_a">瑞丽培训为梦想插上翅膀</a><br><a href="#" class="d2_a">5月18日模特班报名</a></div>
+                    </div>
+                </div>
+
+                <div class="d2_2_2_1_2">
+                    <div class="d2_2_2_1_2_1">
+                        <div class="d2right"><h3 style="display: inline;">&nbsp;</h3><img src="../zhixing_img/201009141537551.jpg" width="271px" height="135px" style="float: right;display: inline;position:static;" /><br><p class="p10">瑞丽封面模特大赛即将开赛</p> &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<p class="p9">期盼已久的瑞丽第9届封面模特大赛即将火热开赛!瑞丽专属模特为你传授比赛过程中的成功经验,赶快来看吧</p>······</div>
+                        <div class="d2right1_b">
+                            <div class="d2right1_b1"><br>模特出镜<br><img src="../zhixing_img/201104121052451_0412.jpg" width="127px" height="190px" /></div>
+                            <div class="d2right1_b2"><br><br><a href="#" style="font-size: 2ch;color:black;font-weight: 800;text-decoration: none;margin-bottom: 15px;">瑞丽模特春夏潮搭秀</a><a href="#" class="d2_a"><br>AYUKI、康乐等瑞丽模特演绎春夏时<br>尚造型······</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">Ayuki助时尚品牌新店剪彩</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">张予曦演绎主题MV乖巧造型</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">MV录影Ayuki展现甜美舞风</a></div>
+                        </div>
+                        <!-- <div class="d2right2_b">
+                            <div class="d2right2_b1"><br>瑞丽之星<br><br><img src="..//zhixing_img/20110407184148图1.jpg" width="127px" height="190px" /></div>
+                            <div class="d2right2_b2"><br><br><br><a href="#" class="d2_a">5月18日平面模特班报名</a><br><br><a href="#" class="d2_a">你是否也对外观缺乏自信？是否也想打造瑞模般的妆容......</a><br><br><br><a href="#" class="d2_a">瑞丽培训舞动人生</a><br><a href="#" class="d2_a">瑞丽培训为梦想插上翅膀</a><br><a href="#" class="d2_a">5月18日模特班报名</a></div>
+                        </div> -->
+                        <div class="d2right2_b">
+                            <div class="d2right1_b1"><br>瑞丽之星<br><img src="../zhixing_img/201104121001075.jpg" width="127px" height="190px" /></div>
+                            <div class="d2right1_b2"><br><br><a href="#" style="font-size: 2ch;color:black;font-weight: 800;text-decoration: none;margin-bottom: 15px;">4月预赛30强选手大公开</a><a href="#" class="d2_a"><br>4月预赛30强选手大公开,请为他们<br>投票吧······</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">蜜桃女孩儿玩转快乐时尚</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">清新美女soski的美瞳秀</a><br><br>&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="d2_a1">麻豆小静最爱的时尚潮搭</a></div>
+                        </div>
+                    </div>
+                    <div class="d2_2_2_1_2_2">
+                        <div class="d2_2_2_1_2_2_0"> 
+                            <div class="d2_2_2_1_2_2_1">
+                                <p class="p2">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;T台秀场&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</p><p class="p3">作为现代中国时尚之全球大使，上海滩以一场星光熠熠的时装秀铭刻其崭新系列的发布</p>
+                            </div>
+                               <div class="d2_2_2_1_2_2_2">
+                               <ul class="ul_3" id="ll3">
+                                <li id="l3"><img src="../zhixing_img/201104021238073.jpg" alt=""></li>
+                                <li id="l3"><img src="../zhixing_img/201104021225392.jpg" alt=""></li>
+                                <li id="l3"><img src="../zhixing_img/201104021338031.jpg" alt=""></li>
+                                <li id="l3"><img src="../zhixing_img/201104021338395.jpg" alt=""></li>
+                                <li id="l3"><img src="../zhixing_img/201104021243044.jpg" alt=""></li>
+                                <li id="l3"><img src="../zhixing_img/201104021240035.jpg" alt=""></li>
+                               </ul>
+                               </div>
+                             </div>
+                    </div>               
+                </div>
+
+            </div>
+            <div class="d2_2_2_2">
+                &nbsp;&nbsp;&nbsp;<a href="#" class="p_button1">Magazine&nbsp;杂志专区</a>
+                &nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="p_button2">《瑞丽服饰美容》</a>
+                &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2">《瑞丽伊人风尚》</a>
+                &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2">《瑞丽时尚先锋》</a>
+                &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2">《瑞丽家居设计》</a>
+                &nbsp;&nbsp;&nbsp;&nbsp; &nbsp;&nbsp;<a href="#" class="p_button2">《男人风尚》</a>
+            </div>
+            <div class="d2_2_2_3">
+                   <div class="zazhi_img1"><img src="../zhixing_img/pngbutton1.png" href="#"  width="210px" height="331px">
+                    &nbsp;&nbsp;&nbsp;&nbsp;<img src="../zhixing_img/pngbutton2.png" href="#" width="210px" height="331px">
+                    &nbsp;&nbsp;&nbsp;&nbsp;<img src="../zhixing_img/pngbutton3.png" href="#" width="210px" height="331px">
+                    &nbsp;&nbsp;&nbsp;&nbsp;<img src="../zhixing_img/pngbutton4.png" href="#" width="210px" height="331px">
+                    &nbsp;&nbsp;&nbsp;&nbsp;<img src="../zhixing_img/pngbutton5.png" href="#" width="210px" height="331px"></div>
+            </div>
+       </div>
+       </div>   
+       </div>
+
+       <div class="d3_0">
+        <div class="d3_1">
+            <div class="d3_1_0"></div>
+            <div class="d3_1_1">
+                <table class="button_table" frame="vsides">
+                    <tr>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;服&nbsp;&nbsp;饰&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;美&nbsp;&nbsp;容&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;家&nbsp;&nbsp;居&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;模&nbsp;&nbsp;特&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;格&nbsp;&nbsp;调&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;美&nbsp;&nbsp;体&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;健&nbsp;&nbsp;康&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;星&nbsp;&nbsp;座&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                        <td style="color: rgb(194, 186, 186);font-weight: 600;">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;情&nbsp;&nbsp;感&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">搭配课堂</a></td>
+                        <td><a href="#" class="button_href">护肤锦囊</a></td>
+                        <td><a href="#" class="button_href">家居设计</a></td>
+                        <td><a href="#" class="button_href">瑞模出镜</a></td>
+                        <td><a href="#" class="button_href">城事</a></td>
+                        <td><a href="#" class="button_href">减肥瘦身</a></td>
+                        <td><a href="#" class="button_href">美丽人生</a></td>
+                        <td><a href="#" class="button_href">星美人时尚</a></td>
+                        <td><a href="#" class="button_href">纯真年代</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">潮流单品</a></td>
+                        <td><a href="#" class="button_href">魅力彩妆</a></td>
+                        <td><a href="#" class="button_href">家饰生活</a></td>
+                        <td><a href="#" class="button_href">国际名模</a></td>
+                        <td><a href="#" class="button_href">悦读</a></td>
+                        <td><a href="#" class="button_href">优雅曲线</a></td>
+                        <td><a href="#" class="button_href">关爱女性</a></td>
+                        <td><a href="#" class="button_href">女人小测算</a></td>
+                        <td><a href="#" class="button_href">倾城之恋</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">模特榜样</a></td>
+                        <td><a href="#" class="button_href">靓发攻略</a></td>
+                        <td><a href="#" class="button_href">装修手册</a></td>
+                        <td><a href="#" class="button_href">风尚男模</a></td>
+                        <td><a href="#" class="button_href">运动</a></td>
+                        <td><a href="#" class="button_href">享瘦美食</a></td>
+                        <td><a href="#" class="button_href">心灵鸡汤</a></td>
+                        <td><a href="#" class="button_href">星梦奇缘</a></td>
+                        <td><a href="#" class="button_href">女人心情</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">明星风尚</a></td>
+                        <td><a href="#" class="button_href">香氛物语</a></td>
+                        <td><a href="#" class="button_href">乐居方式</a></td>
+                        <td><a href="#" class="button_href">魅力女模</a></td>
+                        <td><a href="#" class="button_href">优雅课堂</a></td>
+                        <td><a href="#" class="button_href">健身时间</a></td>
+                        <td><a href="#" class="button_href">吃出健康</a></td>
+                        <td><a href="#" class="button_href">魔法开运</a></td>
+                        <td><a href="#" class="button_href">恋爱宝典</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">高街流行</a></td>
+                        <td><a href="#" class="button_href">美体蜜语</a></td>
+                        <td><a href="#" class="button_href">建材宝典</a></td>
+                        <td><a href="#" class="button_href">T台秀场</a></td>
+                        <td><a href="#" class="button_href">恋物</a></td>
+                        <td><a href="#" class="button_href">塑身有道</a></td>
+                        <td><a href="#" class="button_href">我爱的他</a></td>
+                        <td><a href="#" class="button_href">明星密码</a></td>
+                        <td><a href="#" class="button_href">婚姻物语</a></td>
+                    </tr>
+                    <tr>
+                        <td><a href="#" class="button_href">时尚资讯</a></td>
+                        <td><a href="#" class="button_href">明星扮靓</a></td>
+                        <td><a href="#" class="button_href">设计师在线</a></td>
+                        <td><a href="#" class="button_href">瑞丽之星</a></td>
+                        <td><a href="#" class="button_href">爱车</a></td>
+                        <td><a href="#" class="button_href">明星榜样</a></td>
+                        <td><a href="#" class="button_href">健康地带</a></td>
+                        <td><a href="#" class="button_href">粉面桃花</a></td>
+                        <td><a href="#" class="button_href">offic恋情</a></td>
+                    </tr>
+                </table>
+            </div>
+        </div>
+           <div class="d3_2" style="font-size: 1px;color: white;"><br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<a href="#" class="button">广告服务&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">联系我们&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">法律声明&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">瑞丽招聘&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">关于瑞丽&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">网站地图&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">RSS&nbsp;&nbsp;|&nbsp;&nbsp;</a><a href="#" class="button">设为首页&nbsp;&nbsp;</a>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<form style="display:inline;"><select name="type" size="1" style="color: rgb(62, 198, 240);"><option value="c1" selected>--合作伙伴--&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;</option><option value="c2">--品牌合作--</option></select></form>
+            <br><p style="font-size: 1px;color:white;margin: 3px auto;" align="center">京ICP证010512号&nbsp; ©2001-2011&nbsp; Rayli.com&nbsp; All&nbsp; Right&nbsp; Reserved&nbsp; 电信业务审批[2001]字第651号<br>版权所有&nbsp;不得转载</p>
+           </div>
+       </div>
+    </div>
+    <script>
+        function  getD1(){
+            var date=new Date();
+            var d1=date.toLocaleString();
+            document.getElementById("datetime").innerHTML =d1; 
+        }
+        setInterval("getD1();",1000);
+    
+    //     function findWeather() {
+    //     var cityUrl = 'http://int.dpool.sina.com.cn/iplookup/iplookup.php?format=js';
+    //     $.getScript(cityUrl, function(script, textStatus, jqXHR) {
+    //         var citytq = remote_ip_info.city ;// 获取城市
+    //         var url = "http://php.weather.sina.com.cn/iframe/index/w_cl.php?code=js&city=" + citytq + "&day=0&dfc=3";
+    //         $.ajax({
+    //            url : url,
+    //            dataType : "script",
+    //            scriptCharset : "gbk",
+    //            success : function(data) {
+    //               var _w = window.SWther.w[citytq][0];
+    //               var _f= _w.f1+"_0.png";
+    //               if(new Date().getHours() > 17){
+    //                   _f= _w.f2+"_1.png";
+    //                 }
+    //                var img = "<img width='40px' height='40px' style=' margin-left:20px'src='http://php.weather.sina.com.cn/images/yb3/78_78/" +_f+ "' />";
+    //                var day = (new Date().getMonth()+1)+"月"+(new Date().getDate())+"日";
+    //                var tq = "<div style='float:left'>"+"<p>"+"<span>"+day+"</span>"+_w.s1+"</p>"+"<p>"+_w.t1 + "℃～" + _w.t2 + "℃"+"</p>"+"</div>"+img;
+    //              $('#weather').html(tq);
+    //            }
+    //           });
+    //         });
+    //       }
+    // findWeather();
+    
+            var ul=document.querySelector('#ll3');
+            ul.innerHTML=ul.innerHTML+ul.innerHTML;
+            // 获取所有的li元素和.btn元素
+            var lis=document.querySelectorAll('#l3');
+          
+            // 每次滚动的跨度（正数向右，负数向左，默认向左滚动）
+            let spa=-2;
+            // 计算并设置ul的总宽度
+            ul.style.width=lis[0].offsetWidth*lis.length+'px';
+            
+            // 滚动函数
+            function move(){
+                if(ul.offsetLeft < -ul.offsetWidth/2){
+                    // 向左走时，判断图片是否走完（这里本来时4张图片，加上后面追加的4张相同的，共有8张，所以需要用ul的总宽度来除以2进行判断），走完时重新开始
+                    ul.style.left='0';
+                }
+                if(ul.offsetLeft > 0){
+                    // 向右走时，判断图片是否走完
+                    ul.style.left=-ul.offsetWidth/2+'px';
+                }
+                // 设置偏移位置
+                ul.style.left=ul.offsetLeft+spa+'px';
+            }
+            
+            // 定时器，每30毫秒执行一次move函数
+            let timer=setInterval(move,30);
+            
+            // 为ul绑定事件，悬停停止，移开滚动
+            ul.addEventListener('mousemove',function(){
+                clearInterval(timer);
+            })
+            ul.addEventListener('mouseout',function(){
+                timer=setInterval(move,30);
+            })
+
+            var navSpans = document.querySelectorAll('.nav span');
+		// 标签span点击后作用的元素
+		var itemDivs = document.querySelectorAll('.d2_1_1_2_0_2 div');
+		
+		for(let i = 0; i < navSpans.length; i++){
+		  navSpans[i].onclick = function(){
+			// 标签切换
+			document.querySelector('.nav span.s1').classList.remove('s1');
+			this.classList.add('s1');
+			// 下方内容
+			document.querySelector('.d2_1_1_2_0_2 div.active').classList.remove('active');
+			itemDivs[i].classList.add('active');  
+		  }
+        }
+/**/
+        var navSpans1 = document.querySelectorAll('.nav1 span');
+		// 标签span点击后作用的元素
+		var itemDivs1 = document.querySelectorAll('.d2_1_3_2_1 div');
+        for(let i = 0; i < navSpans1.length; i++){
+		  navSpans1[i].onclick = function(){
+			// 标签切换
+			document.querySelector('.nav1 span.sp1').classList.remove('sp1');
+			this.classList.add('sp1');
+			// 下方内容
+			document.querySelector('.d2_1_3_2_1 div.active1').classList.remove('active1');
+			itemDivs1[i].classList.add('active1');  
+		  }
+        }
+
+        var navSpans2 = document.querySelectorAll('.nav2 span');
+		// 标签span点击后作用的元素
+		var itemDivs2 = document.querySelectorAll('.d211left div');
+        for(let i = 0; i < navSpans2.length; i++){
+		  navSpans2[i].onclick = function(){
+			// 标签切换
+			document.querySelector('.nav2 span.sp2').classList.remove('sp2');
+			this.classList.add('sp2');
+			// 下方内容
+			document.querySelector('.d211left div.active2').classList.remove('active2');
+			itemDivs2[i].classList.add('active2');  
+		  }
+        }
+          
+           
+    </script> 
 </body>
 </html>
